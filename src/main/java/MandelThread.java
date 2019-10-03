@@ -14,7 +14,11 @@ public class MandelThread extends Thread{
 
     static volatile int numLigne = -1;
 
-    static Object verrou = new Object();
+    static final Object verrou = new Object();
+
+    static volatile double debutProgramme;
+    static volatile double tempsCourant;
+    static volatile int numeroImage = 0;
 
     public MandelThread(int numThread) {
         this.numThread = numThread;
@@ -31,7 +35,14 @@ public class MandelThread extends Thread{
             for (int j = 0; j < taille; j++) {
                 colorierPixel(j, ligne);
             }
-            //image.show();         // Pour visualiser l'évolution de l'image
+
+            synchronized (verrou) {
+                tempsCourant = System.nanoTime();
+                if ((tempsCourant - debutProgramme) / 1_000_000 >= numeroImage * 100 && numeroImage < 1000) {
+                    image.save("mandelbrot" + numeroImage + ".png");
+                    numeroImage++;
+                }
+            }
         } while(numLigne < taille-1);
         finT  = System.nanoTime();
         System.out.println("Je suis le thread n° " + numThread + ": " + (finT - debutT)/1_000_000_000 + " s");
@@ -39,6 +50,8 @@ public class MandelThread extends Thread{
 
     public static void main(String[] args) throws Exception {
         final long début = System.nanoTime() ;
+
+        debutProgramme = System.nanoTime() ;
 
         MandelThread[] threads = new MandelThread[4];
         for(int i=0; i < 4; i++) {
