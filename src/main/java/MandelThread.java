@@ -39,7 +39,12 @@ public class MandelThread extends Thread{
             synchronized (verrou) {
                 tempsCourant = System.nanoTime();
                 if ((tempsCourant - debutProgramme) / 1_000_000 >= numeroImage * 100 && numeroImage < 1000) {
-                    image.save("mandelbrot" + numeroImage + ".png");
+                    if(numeroImage < 10)
+                        image.save("mandelbrot00" + numeroImage + ".png");
+                    else if(numeroImage < 100)
+                        image.save("mandelbrot0" + numeroImage + ".png");
+                    else
+                        image.save("mandelbrot" + numeroImage + ".png");
                     numeroImage++;
                 }
             }
