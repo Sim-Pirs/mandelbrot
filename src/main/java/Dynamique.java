@@ -1,6 +1,6 @@
 import java.awt.Color;
 
-public class MandelThread extends Thread{
+public class Dynamique extends Thread{
 
     final static int taille = 500 ;   // nombre de pixels par ligne et par colonne
     final static Picture image = new Picture(taille, taille) ;
@@ -20,7 +20,9 @@ public class MandelThread extends Thread{
     static volatile double tempsCourant;
     static volatile int numeroImage = 0;
 
-    public MandelThread(int numThread) {
+    static boolean creationImage = false;
+
+    public Dynamique(int numThread) {
         this.numThread = numThread;
     }
 
@@ -32,13 +34,15 @@ public class MandelThread extends Thread{
                 numLigne++;
                 ligne = numLigne;
             }
+
             for (int j = 0; j < taille; j++) {
-                colorierPixel(j, ligne);
+                    if(ligne < taille)
+                        colorierPixel(j, ligne);
             }
 
             synchronized (verrou) {
                 tempsCourant = System.nanoTime();
-                if ((tempsCourant - debutProgramme) / 1_000_000 >= numeroImage * 100 && numeroImage < 1000) {
+                if ((tempsCourant - debutProgramme) / 1_000_000 >= numeroImage * 100 && numeroImage < 1000 && creationImage) {
                     if(numeroImage < 10)
                         image.save("mandelbrot00" + numeroImage + ".png");
                     else if(numeroImage < 100)
@@ -50,21 +54,24 @@ public class MandelThread extends Thread{
             }
         } while(numLigne < taille-1);
         finT  = System.nanoTime();
-        System.out.println("Je suis le thread n° " + numThread + ": " + (finT - debutT)/1_000_000_000 + " s");
+        //System.out.println("Je suis le thread n° " + numThread + ": " + (finT - debutT)/1_000_000_000 + " s");
     }
 
     public static void main(String[] args) throws Exception {
         final long début = System.nanoTime() ;
+        int nbThread = 4;
+
+        System.out.println("Calculs en cours...");
 
         debutProgramme = System.nanoTime() ;
 
-        MandelThread[] threads = new MandelThread[4];
-        for(int i=0; i < 4; i++) {
-            threads[i] = new MandelThread(i);
+        Dynamique[] threads = new Dynamique[nbThread];
+        for(int i=0; i < nbThread; i++) {
+            threads[i] = new Dynamique(i);
             threads[i].start();
         }
 
-        for(int i =0; i<4; i++){
+        for(int i =0; i<nbThread; i++){
             threads[i].join();
         }
 

@@ -1,29 +1,73 @@
-// -*- coding: utf-8 -*-
+import java.awt.*;
 
-import java.awt.Color;
+public class Dynamique500Threads extends Thread{
 
-public class Mandelbrot{
     final static int taille = 500 ;   // nombre de pixels par ligne et par colonne
     final static Picture image = new Picture(taille, taille) ;
     // Il y a donc taille*taille pixels blancs ou gris à déterminer
     final static int max = 100_000 ;
     // C'est le nombre maximum d'itérations pour déterminer la couleur d'un pixel
-    
-    public static void main(String[] args)  {
-        final long début = System.nanoTime() ;
 
-        for (int i = 0; i < taille; i++) {
-            for (int j = 0; j < taille; j++) {
-                colorierPixel(i,j) ;
+    private int numThread;
+    private double debutT;
+    private double finT;
+
+    static final Object verrou = new Object();
+
+    static volatile double debutProgramme;
+    static volatile double tempsCourant;
+    static volatile int numeroImage = 0;
+
+    static boolean creationImage = false;
+
+    public Dynamique500Threads(int numThread) {
+        this.numThread = numThread;
+    }
+
+    public void run() {
+        debutT = System.nanoTime();
+
+        for (int j = 0; j < taille; j++) {
+            colorierPixel(j, numThread);
+            synchronized (verrou) {
+                //image.show();
+                tempsCourant = System.nanoTime();
+                if ((tempsCourant - debutProgramme) / 1_000_000 >= numeroImage * 100 && numeroImage < 1000 && creationImage) {
+                    if (numeroImage < 10)
+                        image.save("mandelbrot00" + numeroImage + ".png");
+                    else if (numeroImage < 100)
+                        image.save("mandelbrot0" + numeroImage + ".png");
+                    else
+                        image.save("mandelbrot" + numeroImage + ".png");
+                    numeroImage++;
+                }
             }
-             image.show();         // Pour visualiser l'évolution de l'image
+        }
+        finT = System.nanoTime();
+        //System.out.println("Je suis le thread n° " + numThread + ": " + (finT - debutT)/1_000_000_000 + " s");
+    }
+
+    public static void main(String[] args) throws Exception {
+        final long début = System.nanoTime() ;
+        int nbThread = 500;
+
+        debutProgramme = System.nanoTime() ;
+
+        Dynamique500Threads[] threads = new Dynamique500Threads[nbThread];
+        for(int i=0; i < nbThread; i++) {
+            threads[i] = new Dynamique500Threads(i);
+            threads[i].start();
+        }
+
+        for(int i =0; i<nbThread; i++){
+            threads[i].join();
         }
 
         final long fin = System.nanoTime() ;
         final long durée = (fin - début) / 1_000_000 ;
         System.out.println("Durée = " + (double) durée / 1000 + " s.") ;
         image.show() ;
-    }    
+    }
 
     // La fonction colorierPixel(i,j) colorie le pixel (i,j) de l'image en gris ou blanc
     public static void colorierPixel(int i, int j) {
@@ -42,7 +86,7 @@ public class Mandelbrot{
         double b = yc - region/2 + region*j/taille ;
         // Le pixel (i,j) correspond au point (a,b)
         if (mandelbrot(a, b, max)) image.set(i, j, gris) ;
-        else image.set(i, j, blanc) ; 
+        else image.set(i, j, blanc) ;
     }
 
     // La fonction mandelbrot(a, b, max) détermine si le point (a,b) est gris
@@ -58,17 +102,5 @@ public class Mandelbrot{
         }
         return true ; // Le point (a,b) est gris
     }
-}
 
-/* 
-   $ make
-   javac *.java 
-   jar cvmf MANIFEST.MF Mandelbrot.jar *.class 
-   manifeste ajouté
-   ajout : Mandelbrot.class(entrée = 1697) (sortie = 1066)(compression : 37 %)
-   ajout : Picture.class(entrée = 5689) (sortie = 3039)(compression : 46 %)
-   rm *.class 
-   $ java -jar Mandelbrot.jar
-   Durée = 35.851 s.
-   ^C
-*/
+}
