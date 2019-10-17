@@ -8,17 +8,35 @@ public class Sequentiel {
     // Il y a donc taille*taille pixels blancs ou gris à déterminer
     final static int max = 100_000 ;
     // C'est le nombre maximum d'itérations pour déterminer la couleur d'un pixel
+
+    public static class TraceLigne implements Runnable {
+
+        int numeroLigne;
+
+        public TraceLigne(int numeroLigne){
+            this.numeroLigne = numeroLigne;
+        }
+
+        @Override
+        public void run() {
+            for(int i=0; i<taille; i++){
+                colorierPixel(i,numeroLigne);
+            }
+        }
+    }
     
     public static void main(String[] args)  {
         final long début = System.nanoTime() ;
 
-        for (int i = 0; i < taille; i++) {
+       /* for (int i = 0; i < taille; i++) {
             for (int j = 0; j < taille; j++) {
                 colorierPixel(i,j) ;
             }
              image.show();         // Pour visualiser l'évolution de l'image
-        }
+        }*/
 
+        TraceLigne traceLigne = new TraceLigne(238);
+        traceLigne.run();
         final long fin = System.nanoTime() ;
         final long durée = (fin - début) / 1_000_000 ;
         System.out.println("Durée = " + (double) durée / 1000 + " s.") ;
